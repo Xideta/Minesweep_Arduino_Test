@@ -6,7 +6,7 @@ int ledPin = 13; // led pin til debugging
 int bombPin = 2; // bombevender knap
 int flagPin = 3; // plant flag knap
 int buzzPin = 4; // pin hvor musik skal spilles
-int location[][] = 
+int location[][];
 
 void setup()
 {
