@@ -156,7 +156,7 @@ void beep()
         
       }    
   }
-  timeDelay=500/dist;
+  timeDelay=500/dist+;
   
   if(millis() > time + timeDelay)
   {
