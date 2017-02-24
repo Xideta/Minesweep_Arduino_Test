@@ -16,11 +16,13 @@ int time;
 float timeDelay;
 
 boolean flagPlantTrue=false;
-
+int holeCount = 0;
+int holeLocation[][] = new int[9][2];
+int flagLocation[][] = new int[9][2];
 
 Arduino arduino;
 int ledPin = 13; // led pin til debugging
-int bombPin = 2; // bombevender knap
+int resetPin = 2; // bombevender knap
 int plantPin = 3; // plant flag knap
 int buzzPin = 4; // pin hvor musik skal spilles
 int xPin = 0;
@@ -30,7 +32,7 @@ float yVal = 0;
 float xGrid = 0;
 float yGrid = 0;
 
-int[] location = {0, 0};
+int[] location = {5, 5};
 int[][] board = { //1 2 3 4 5 6 7 8 9
                    {0,0,0,0,0,0,0,0,0}, //1
                    {0,0,0,0,0,0,0,0,0}, //2
@@ -55,7 +57,7 @@ int[][] mines ={  {0,0},
                 };
 
 
-;
+
 void gen()
 {
   r1 = random(9);
@@ -74,11 +76,6 @@ void gen()
     mines[i][0]=(int)r1+1;
     mines[i][1]=(int)r2+1;
   }
-
-    
-
-
-
 }
 
 void setup()
@@ -90,6 +87,8 @@ void setup()
   arduino.pinMode(buzzPin, Arduino.OUTPUT);
   arduino.pinMode(xPin, Arduino.INPUT);
   arduino.pinMode(yPin, Arduino.INPUT);
+  arduino.pinMode(plantPin, Arduino.INPUT);
+  arduino.pinMode(resetPin, Arduino.INPUT);
   time = millis();
   timeDelay=500;
   
@@ -104,22 +103,18 @@ void setup()
  img2= loadImage("Bomb.png");
  img3= loadImage("Flag.png");
  img4= loadImage("Hole.png");
-
- 
- 
- gen();
-/* for (i = 0; i < 9; i++) {
-  for (j = 0; j < 9; j++) {
-    if(j<8){
-    print(board[i][j]);
-    }
-    
-    if(j==8)
-    {
-     println(board[i][j]);
-    }
+   
+  for(i=0;i<9;i++)
+  {
+    flagLocation[i][0]=-1;
+    flagLocation[i][1]=-1;
   }
- } */
+  for(i=0;i<9;i++)
+  {
+    holeLocation[i][0]=-1;
+    holeLocation[i][1]=-1;
+  }
+ gen();
  for(i=0;i<9;i++)
  {
    print(mines[i][0]);
@@ -147,9 +142,6 @@ void move()
       location[1]=i;
     }
   }
- 
-  // println(location[0]);
-  // println(location[1]);
   image(img,xVal,yVal);
 }
 
@@ -203,44 +195,132 @@ void beep()
 
 void plant()
 {
-  if(arduino.digitalRead(plantPin)==1)
-  {
     for(i=0;i<9;i++)
     {
       if(location[0]==mines[i][0] && location[1]==mines[i][1])
       {
         flagPlantTrue=true;
+        flagLocation[i][0]=(location[0]-1)*64;
+        flagLocation[i][1]=(location[1]-1)*64;
+        print("HIT");
         
       }
     }
     
-    if(flagPlantTrue=true)
+    if(flagPlantTrue)
     {
       flagPlantTrue=false;
     }
- //   else
+    else {
+      holeLocation[holeCount][0]=(location[0]-1)*64;
+      holeLocation[holeCount][1]=(location[1]-1)*64;
+      holeCount++;
+    }
     
+  
+}
+
+void holes()
+{
+  for(i=0;i<9;i++)
+  {
+    if(flagLocation[i][0]!=-1 && flagLocation[i][1]!=-1)
+    {
+    image(img3,flagLocation[i][0],flagLocation[i][1]); 
+    }
+  }
+  
+  for(i=0;i<9;i++)
+  {
+    if(holeLocation[i][0]!=-1 && holeLocation[i][1]!=-1)
+    {
+    image(img4,holeLocation[i][0],holeLocation[i][1]); 
+    }
+  }
+  
+}
+
+void win()
+{
+  if(holeCount==4)
+  {
+    reset();
+  }
+  if(arduino.digitalRead(resetPin)==1)
+  {
+    while(arduino.digitalRead(resetPin)==1)
+    {
+      delay(1);
+    }
+    reset();
   }
 }
 
+void reset()
+{
+tempD = 100;
 
 
+flagPlantTrue=false;
+holeCount = 0;
+
+for(i=0;i<9;i++)
+{
+holeLocation[i][0] = -1;
+holeLocation[i][1] = -1;
+
+flagLocation[i][0] = -1;
+flagLocation[i][1] = -1;
+}
+
+location[0] = -1;
+location[1] = -1;
+
+for(i=0;i<9;i++)
+{
+  for(j=0;i<9;i++)
+  {
+board[i][j] =0;
+
+  }
+}
+for(i=0;i<9;i++)
+{
+mines[i][0]=0;
+mines[i][1]=0;
+}
+gen();
+println("NEW GAME");
+println("NEW GAME");
+ for(i=0;i<9;i++)
+ {
+   print(mines[i][0]);
+   print(", ");
+   println(mines[i][1]);
+ }
+
+}
 void draw()
 {
-/*  arduino.digitalWrite(ledPin, Arduino.HIGH);
-  delay(1000);
-  arduino.digitalWrite(ledPin, Arduino.LOW);
-  delay(1000);
-*/
     
     background(255); //Hvid Baggrund
-    move();
-    for(i=0; i<width; i+=64){ // i starter på 0, så længe i er mindre end skærmen, så lav en linje og læg 66 til i
+    for(i=0; i<width; i+=64){ // i starter på 0, så længe i er mindre end skærmen, så lav en linje og læg 64 til i
       line(i,0,i,height); // line(x1, y1, x2, y2);
     }
     for(w=0; w<height; w+=64){
       line(0,w,width,w);
     }
+      if(arduino.digitalRead(plantPin)==1)
+      {
+        while(arduino.digitalRead(plantPin)==1)
+      {
+        delay(1);
+      }
+        plant();
+      }
     beep();
+    holes();
+    move();
+    win();
     
 }
