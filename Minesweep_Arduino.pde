@@ -3,13 +3,20 @@ import cc.arduino.*;
 
 PImage img;
 PImage img2;
+PImage img3;
+PImage img4;
 int i=0;
 int j=0;
 int w=0;
 float r1=0;
 float r2=0;
+float tempD = 100;
+
 int time;
 float timeDelay;
+
+boolean flagPlantTrue=false;
+
 
 Arduino arduino;
 int ledPin = 13; // led pin til debugging
@@ -46,23 +53,26 @@ int[][] mines ={  {0,0},
                   {0,0},
                   {0,0}
                 };
+
+
 ;
 void gen()
 {
   r1 = random(9);
   r2 = random(9);
   board[(int)r1][(int)r2]=1;
-  mines[0][0]=(int)r1;
-  mines[0][1]=(int)r2;
+  mines[0][0]=(int)r1+1;
+  mines[0][1]=(int)r2+1;
   for(i=1;i<9;i++)
   {
     while(board[(int)r1][(int)r2]==1){
     r1 = random(9);
     r2 = random(9);
     }
+    
     board[(int)r1][(int)r2]=1;
-    mines[i][0]=(int)r1;
-    mines[i][1]=(int)r2;
+    mines[i][0]=(int)r1+1;
+    mines[i][1]=(int)r2+1;
   }
 
     
@@ -92,7 +102,8 @@ void setup()
  }
  img = loadImage("Anton1.png");
  img2= loadImage("Bomb.png");
-
+ img3= loadImage("Flag.png");
+ img4= loadImage("Hole.png");
 
  
  
@@ -137,44 +148,82 @@ void move()
     }
   }
  
- // println(location[0]);
- // println(location[1]);
+  // println(location[0]);
+  // println(location[1]);
   image(img,xVal,yVal);
 }
 
 void beep()
 {
   float dist = 100;
+
   for(i=0;i<9;i++)
   {
-      int tempX = mines[i][0]-location[0];
-      int tempY = mines[i][1]-location[1];
-      float tempD = sqrt(tempX^2+tempY^2);
+
+            if(mines[i][0]-location[0]<0 && mines[i][1]-location[1]>0 || mines[i][0]-location[0]<0 && mines[i][1]-location[1]==0 ) // HØJRE-TOP side af minen distance calc
+      {
+        tempD = sqrt((location[0]-mines[i][0])^2+(mines[i][1]-location[1])^2);
+      }
+       else if(mines[i][0]-location[0]>0 && mines[i][1]-location[1]<0 || mines[i][0]-location[0]>0 && mines[i][1]-location[1]==0 ) // VENSTRE-NED side af minen distance calc
+      {
+        tempD = sqrt((mines[i][0]-location[0])^2+(location[1]-mines[i][1])^2);
+      } 
+       else if(mines[i][0]-location[0]>0 && mines[i][1]-location[1]>0 || mines[i][0]-location[0]==0 && mines[i][1]-location[1]>0 ) // VENSTRE-TOP side af minen distance calc
+      {
+        tempD = sqrt((mines[i][0]-location[0])^2+(mines[i][1]-location[1])^2);
+      } 
+       else if(mines[i][0]-location[0]<0 && mines[i][1]-location[1]<0 || mines[i][0]-location[0]==0 && mines[i][1]-location[1]<0 ) // HØJRE-NED side af minen distance calc
+      {
+        tempD = sqrt((location[0]-mines[i][0])^2+(location[1]-3)^mines[i][1]);
+      } 
+      else if (mines[i][0]-location[0]==0 && mines[i][1]-location[1]==0)
+      {
+        tempD=-0.5;
+      }
+      
+      
       if(tempD<dist)
       {
         dist=tempD;
-        
-      }    
+      
+      }
   }
-  timeDelay=500/dist+;
+  timeDelay=200*(dist+1);
+  //println(timeDelay);
+  //println(dist);
   
   if(millis() > time + timeDelay)
   {
     arduino.digitalWrite(buzzPin,Arduino.HIGH);
     time=millis();
     arduino.digitalWrite(buzzPin,Arduino.LOW);
+    
   }
 }
 
 void plant()
 {
-  //location[1]
+  if(arduino.digitalRead(plantPin)==1)
+  {
+    for(i=0;i<9;i++)
+    {
+      if(location[0]==mines[i][0] && location[1]==mines[i][1])
+      {
+        flagPlantTrue=true;
+        
+      }
+    }
+    
+    if(flagPlantTrue=true)
+    {
+      flagPlantTrue=false;
+    }
+ //   else
+    
+  }
 }
 
-void flip()
-{
-  
-}
+
 
 void draw()
 {
